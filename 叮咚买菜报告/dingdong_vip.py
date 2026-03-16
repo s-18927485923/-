@@ -24,16 +24,23 @@ COLORS = {
     "text_secondary": "#6C757D"
 }
 
-# ========== 终极解决方案：Plotly中文配置（100%生效） ==========
-# Plotly全局中文配置（网页端渲染，不依赖服务器字体）
-px.defaults.font = dict(
-    family="Microsoft YaHei, SimHei, WenQuanYi Micro Hei, DejaVu Sans",
-    size=12,
-    color=COLORS["text_primary"]
-)
-pio = px.io
-pio.templates.default = "plotly_white"
-# ==============================================================
+# ==========  Plotly中文配置（兼容所有版本） ==========
+# 直接设置全局字体（兼容Plotly 5.x及以下版本）
+def set_plotly_font():
+    import plotly.io as pio
+    # 定义默认字体
+    font_config = dict(
+        family="Microsoft YaHei, SimHei, WenQuanYi Micro Hei, DejaVu Sans",
+        size=12,
+        color=COLORS["text_primary"]
+    )
+    # 应用到全局模板
+    pio.templates.default = "plotly_white"
+    # 为所有图表设置字体
+    pio.templates["plotly_white"].layout.font = font_config
+
+set_plotly_font()
+# =====================================================
 
 # 页面配置（超浅绿背景 + 1300px宽度）
 st.set_page_config(page_title="叮咚买菜经营数据分析报告", layout="wide")
