@@ -22,9 +22,28 @@ COLORS = {
     "text_primary": "#2C3E50",
     "text_secondary": "#6C757D"
 }
-# 全局字体配置（解决matplotlib中文显示问题）
-plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'WenQuanYi Micro Hei', 'SimHei', 'Arial Unicode MS']
-plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示方块问题
+
+
+# ========== 解决中文显示：手动加载开源中文字体 ==========
+import matplotlib.pyplot as plt
+from matplotlib import font_manager
+import os
+import urllib.request
+
+# 下载开源中文字体（WenQuanYi Micro Hei）到临时目录
+font_url = "https://github.com/lxylxy1404/fonts/raw/master/wqy-microhei.ttc"
+font_path = "/tmp/wqy-microhei.ttc"
+
+if not os.path.exists(font_path):
+    urllib.request.urlretrieve(font_url, font_path)
+
+# 手动注册字体到 matplotlib
+font_prop = font_manager.FontProperties(fname=font_path)
+plt.rcParams['font.family'] = font_prop.get_name()
+plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
+# =====================================================
+
+
 # 页面配置（超浅绿背景 + 1300px宽度）
 st.set_page_config(page_title="叮咚买菜经营数据分析报告", layout="wide")
 st.markdown(f"""
