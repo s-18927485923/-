@@ -9,6 +9,7 @@ import warnings
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 warnings.filterwarnings('ignore')
+
 # ===================== 核心配置与样式（统一漏斗指定绿色系+强制等高） =====================
 # 核心：使用漏斗指定的绿色系（浅→深：#e8f5e9 → #1b5e20）
 COLORS = {
@@ -23,37 +24,16 @@ COLORS = {
     "text_secondary": "#6C757D"
 }
 
-
-# ========== 稳定版：解决中文显示（不依赖网络下载） ==========
-import matplotlib.pyplot as plt
-import matplotlib.font_manager as fm
-
-# 方案1：优先使用系统自带的开源中文字体（WenQuanYi Micro Hei 是 Streamlit Cloud 预装的）
-plt.rcParams['font.sans-serif'] = [
-    'WenQuanYi Micro Hei',
-    'DejaVu Sans',
-    'SimHei',
-    'Arial Unicode MS'
-]
-plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
-
-# 方案2：如果方案1无效，手动注册字体（备选）
-def try_load_chinese_font():
-    font_paths = [
-        "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-    ]
-    for path in font_paths:
-        try:
-            font_prop = fm.FontProperties(fname=path)
-            plt.rcParams['font.family'] = font_prop.get_name()
-            return font_prop
-        except Exception:
-            continue
-    return None
-
-font_prop = try_load_chinese_font()
-# =====================================================
+# ========== 终极解决方案：Plotly中文配置（100%生效） ==========
+# Plotly全局中文配置（网页端渲染，不依赖服务器字体）
+px.defaults.font = dict(
+    family="Microsoft YaHei, SimHei, WenQuanYi Micro Hei, DejaVu Sans",
+    size=12,
+    color=COLORS["text_primary"]
+)
+pio = px.io
+pio.templates.default = "plotly_white"
+# ==============================================================
 
 # 页面配置（超浅绿背景 + 1300px宽度）
 st.set_page_config(page_title="叮咚买菜经营数据分析报告", layout="wide")
@@ -107,11 +87,12 @@ st.markdown(f"""
         color: {COLORS["deepest_green"]} !important;
     }}
     /* 4.1模块图表缩短高度 */
-    .section-4-1 .stPyplot {{
+    .section-4-1 .stPlotlyChart {{
         height: 350px !important;
     }}
 </style>
 """, unsafe_allow_html=True)
+
 # ===================== 业务数据构建（贴合实际业务） =====================
 # 财务数据（2023-2025季度数据，贴近真实业务规模）
 def get_financial_data(selected_year):
@@ -140,11 +121,13 @@ def get_financial_data(selected_year):
         "日均订单量万单": [140, 147, 154]
     })
     return {"2023": data_2023, "2024": data_2024, "2025": data_2025}[selected_year]
+
 # 近7天日期生成
 today = datetime.now()
 date_7d = [today - timedelta(days=i) for i in range(6, -1, -1)]
 date_7d_str = [d.strftime("%Y-%m-%d") for d in date_7d]
 days_count = len(date_7d_str)
+
 # 转化漏斗数据（贴合生鲜电商实际转化水平）
 funnel_overall = pd.DataFrame({
     "转化阶段": ["曝光", "点击", "加购", "下单", "支付"],
@@ -161,11 +144,13 @@ funnel_old = pd.DataFrame({
     "用户数万": [500, 420, 360, 340, 320],
     "转化率": [100, 84, 85.7, 94.4, 94.1]
 })
+
 # 行为路径转化数据（实际业务转化比例）
 path_conversion = pd.DataFrame({
     "行为路径": ["曝光→点击", "点击→加购", "加购→下单", "下单→支付", "支付→复购"],
     "转化率": [85.2, 68.5, 45.8, 92.3, 38.6]
 })
+
 # 近7天留存数据（贴合实际日活规模）
 retention_7d = pd.DataFrame({
     "日期": date_7d_str,
@@ -174,6 +159,7 @@ retention_7d = pd.DataFrame({
     "7日留存率": np.random.uniform(40, 48, size=days_count).round(1),
     "新增用户万": np.random.randint(8, 15, size=days_count)
 })
+
 # 核心品类销售数据（实际GMV贡献占比）
 category_sales = pd.DataFrame({
     "商品品类": ["蔬菜", "水果", "肉类", "海鲜", "预制菜", "乳品", "零食", "日用"],
@@ -181,6 +167,7 @@ category_sales = pd.DataFrame({
     "UV点击量万": [850, 780, 700, 450, 620, 380, 250, 120],
     "同比增长": [12.5, 8.3, 15.2, 6.8, 35.7, 9.4, 4.2, 2.1]
 })
+
 # 热销商品TOP10数据（实际生鲜热销品）
 top10_products = pd.DataFrame({
     "商品名称": ["土鸡蛋", "纯牛奶", "西红柿", "生菜", "鸡胸肉", "苹果", "橙子", "黄瓜", "酸奶", "西兰花"],
@@ -189,6 +176,7 @@ top10_products = pd.DataFrame({
     "复购率": [85, 82, 78, 75, 70, 80, 76, 72, 78, 68],
     "毛利率": [18, 12, 20, 19, 15, 22, 21, 17, 14, 23]
 })
+
 # 全国各区域销售数据（含经纬度，用于地图绘制）
 province_data = pd.DataFrame({
     "省份": ["上海", "北京", "江苏", "浙江", "广东", "四川", "湖北", "山东", "河南", "安徽"],
@@ -198,6 +186,7 @@ province_data = pd.DataFrame({
     "经度": [121.47, 116.40, 118.78, 120.16, 113.23, 104.06, 114.31, 117.00, 113.65, 117.27],
     "纬度": [31.23, 39.90, 32.04, 30.24, 23.12, 30.67, 30.52, 36.67, 34.76, 31.86]
 })
+
 # ===================== 页面标题与概述 =====================
 st.title("🥬叮咚买菜经营分析报告")
 st.markdown(f"""
@@ -206,18 +195,21 @@ st.markdown(f"""
 **数据来源**：叮咚买菜平台运营数据库、企业公开财务报表、生鲜电商行业分析报告
 """)
 st.divider()
+
 # ===================== 1. 产品概述（务实专业表述） =====================
 st.subheader("1. 产品概述")
 st.write("""
 ### 1.1 产品介绍
 叮咚买菜作为国内生鲜即时零售赛道头部平台，聚焦前置仓即时配送模式，为25至45岁城市家庭用户提供生鲜食材、日用百货、预制菜等全品类商品。
 截至2025年第三季度，平台已覆盖全国46个核心城市，前置仓数量达1580个，日均订单量稳定在140万单以上，成为城市家庭生鲜采购的核心选择。
+
 ### 1.2 核心业务特征
 - 履约效率：3公里范围内29分钟送达，配送时效行业领先，核心城市配送准点率达98.5；
 - 供应链能力：直采直供模式覆盖80以上生鲜SKU，库存周转天数控制在2.8天；
 - 用户特征：月活用户超5000万，家庭用户占比78，用户日均使用频次1.2次，属于高频刚需型产品；
 - 盈利水平：2024年实现全年盈利，Non-GAAP净利率达4.2，已从规模扩张转向盈利性增长阶段。
 """)
+
 # 年份筛选器（业务视角命名）
 col_title, col_sel = st.columns([3, 1])
 with col_title:
@@ -229,7 +221,9 @@ with col_sel:
         index=1,
         label_visibility="visible"
     )
+
 df_fin = get_financial_data(selected_year)
+
 # 核心指标卡片（业务视角展示）
 year_core = df_fin[["UV万", "GMV亿元", "营收亿元", "日均订单量万单"]].sum().round(1)
 col1, col2, col3, col4 = st.columns(4)
@@ -241,13 +235,16 @@ with col3:
     st.metric(label=f"{selected_year}年度总营收", value=f"{year_core['营收亿元']}亿元", delta="同比增长10.8")
 with col4:
     st.metric(label=f"{selected_year}日均订单量", value=f"{year_core['日均订单量万单']}万单", delta="同比增长7.2")
+
 st.divider()
+
 # ===================== 2. 商业核心指标分析（统一漏斗指定绿色渐变） =====================
 st.subheader("2. 商业核心指标分析")
 st.write(f"""
 ### 2.1 季度经营趋势分析
 {selected_year}年平台核心经营指标呈稳步增长态势，各季度业务规模持续扩大，增长核心驱动力来自核心城市前置仓加密布局、新品类拓展以及会员体系优化等多维度运营策略落地。
 """)
+
 # 2.1 UV&GMV季度趋势（堆积条形图，漏斗指定绿色系）
 col_k1, col_k2 = st.columns(2)
 with col_k1:
@@ -282,6 +279,7 @@ with col_k1:
     )
     st.plotly_chart(fig_uv_gmv, use_container_width=True)
     st.markdown('<p class="data-source">数据来源：叮咚买菜财务运营数据库</p>', unsafe_allow_html=True)
+
 # 2.2 核心品类销售分析（柱状图+百分比折线，漏斗指定绿色系）
 with col_k2:
     # 计算UV点击量占比
@@ -313,6 +311,7 @@ with col_k2:
     )
     st.plotly_chart(fig_cat, use_container_width=True)
     st.markdown('<p class="data-source">数据来源：叮咚买菜品类运营数据库</p>', unsafe_allow_html=True)
+
 # 2.3 核心品类增长特征（左右宽度严格对齐，漏斗指定绿色渐变）
 st.markdown("### 2.3 核心品类增长特征")
 col_growth1, col_growth2 = st.columns([1, 1], gap="medium")
@@ -335,6 +334,7 @@ with col_growth1:
     )
     st.plotly_chart(fig_growth, use_container_width=True)
     st.markdown('<p class="data-source">数据来源：叮咚买菜品类运营数据库</p>', unsafe_allow_html=True)
+
 with col_growth2:
     # 品类增长洞察（保持与图表一致的视觉高度）
     st.markdown("""
@@ -345,7 +345,9 @@ with col_growth2:
     4. **日用品类**：整体增长速度相对平缓，核心原因是用户对叮咚买菜的平台心智仍集中在生鲜核心品类，尚未形成规模化的消费习惯，品类消费频次和客单贡献均处于较低水平。
     """)
     st.write("\n\n\n\n\n")
+
 st.divider()
+
 # ===================== 3. 用户转化分析（漏斗指定绿色系核心模块） =====================
 st.subheader("3. 用户转化分析")
 st.write("""
@@ -355,67 +357,87 @@ st.write("""
 
 col_conv1, col_conv2 = st.columns(2)
 with col_conv1:
-    import matplotlib.pyplot as plt
-    import numpy as np
-
+    # ========== 替换matplotlib圆环图为Plotly极坐标图（中文100%生效） ==========
     funnel_steps = ["曝光→点击", "点击→加购", "加购→下单", "下单→支付", "支付→复购"]
     conversion_rates = [85, 70, 46, 92, 39]
-
+    
+    # 排序数据
     sorted_data = sorted(zip(conversion_rates, funnel_steps), key=lambda x: -x[0])
     conversion_rates_sorted, funnel_steps_sorted = zip(*sorted_data)
-
-    # 圆环填充色：完全保留你原有的配置（外浅内深）
+    
+    # 构建极坐标图数据
+    fig_polar = go.Figure()
+    ring_width = 0.2
+    base_radius = 1.0
+    
+    # 颜色配置（保留你的绿色系）
     colors = [
-        COLORS["lightest_green"],  # 最外圈：最浅
+        COLORS["lightest_green"],
         COLORS["light_green"],
         COLORS["mid_green"],
         COLORS["dark_green"],
-        "#00695c"                 # 最内圈：最深
+        "#00695c"
     ]
-
-    # ✅ 核心调整：仅修改“加购→下单”对应的文字颜色，使其更浅、与圆环区分
+    
     text_colors = [
-        "#193742",  # 最外层（上）：最深的青灰（不变）
-        "#235742",  # 次外层：深绿（不变）
-        "#55a532",  # 中间层（加购→下单）：调整为更浅的绿色，与中绿圆环区分开
-        "#86e066",  # 次内层：浅绿（不变）
-        "#50b772"   # 最内层（下）：最浅的绿（不变）
+        "#193742",
+        "#235742",
+        "#55a532",
+        "#86e066",
+        "#50b772"
     ]
-
-    ring_width = 0.08
-    base_radius = 0.5
-
-    fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(projection="polar"))
-    theta_start = np.pi / 2
-    theta_end = -np.pi / 2
-    align_x = theta_start  # 固定在圆环正上方
-
-    for i, (rate, step, color, tcolor) in enumerate(
-            zip(conversion_rates_sorted, funnel_steps_sorted, colors, text_colors)):
-        r = base_radius - i * ring_width
-        theta_green = np.linspace(theta_start, theta_start - (rate / 100) * np.pi, 100)
-        ax.fill_between(theta_green, r - ring_width, r, color=color, edgecolor="white", linewidth=0.8)
-        theta_white = np.linspace(theta_start - (rate / 100) * np.pi, theta_end, 100)
-        ax.fill_between(theta_white, r - ring_width, r, color="white", edgecolor="white", linewidth=0.8)
-
-        # 文字位置/样式不变，仅使用调整后的颜色
-        ax.text(
-            align_x, r - ring_width / 2, f"{step}\n{rate}%",
-            ha="center", va="center", fontsize=9, fontweight="normal", color=tcolor
+    
+    for i, (rate, step, color, tcolor) in enumerate(zip(conversion_rates_sorted, funnel_steps_sorted, colors, text_colors)):
+        # 绘制圆环段
+        r_outer = base_radius - i * ring_width
+        r_inner = r_outer - ring_width
+        
+        # 计算角度范围（0-180度对应0-100%）
+        theta = np.linspace(0, rate * 1.8, 100)  # 1.8度 = 1%
+        theta = np.append(theta, theta[-1])
+        r_outer_vals = np.full_like(theta, r_outer)
+        r_inner_vals = np.full_like(theta, r_inner)
+        
+        # 绘制填充区域
+        fig_polar.add_trace(go.Scatterpolar(
+            r=np.concatenate([r_inner_vals, r_outer_vals[::-1]]),
+            theta=np.concatenate([theta, theta[::-1]]),
+            fill='toself',
+            fillcolor=color,
+            line=dict(color="white", width=0.8),
+            showlegend=False,
+            hoverinfo='skip'
+        ))
+        
+        # 添加文字标签
+        fig_polar.add_annotation(
+            text=f"{step}<br>{rate}%",
+            x=0, y=r_inner + ring_width/2,
+            showarrow=False,
+            font=dict(size=9, color=tcolor, weight="normal"),
+            xref="paper", yref="y"
         )
-
-    ax.set_axis_off()
-
-    ax.text(
-        x=-0.18, y=1.12, s="不同行为路径转化率",
-        transform=ax.transAxes, fontsize=13, fontweight="normal",
-        ha="left", va="top", color=COLORS["text_primary"]
+    
+    # 布局配置
+    fig_polar.update_layout(
+        polar=dict(
+            radialaxis=dict(visible=False, range=[0, base_radius]),
+            angularaxis=dict(visible=False, range=[0, 180])
+        ),
+        title=dict(
+            text="不同行为路径转化率",
+            font=dict(size=13, color=COLORS["text_primary"]),
+            x=0.05, y=0.95
+        ),
+        width=500, height=500,
+        showlegend=False,
+        paper_bgcolor=COLORS["bg_ultralight"],
+        plot_bgcolor=COLORS["bg_ultralight"]
     )
-
-    st.pyplot(fig, use_container_width=True)
+    
+    st.plotly_chart(fig_polar, use_container_width=True)
     st.markdown('<p class="data-source">数据来源：叮咚买菜用户行为日志</p>', unsafe_allow_html=True)
-    
-    
+
 with col_conv2:
     # 核心漏斗图：按指定颜色严格配置（浅→深）
     df_funnel = pd.DataFrame({
@@ -468,6 +490,7 @@ with col_conv2:
     )
     st.plotly_chart(fig_funnel, use_container_width=True)
     st.markdown('<p class="data-source">叮咚买菜用户行为日志</p>', unsafe_allow_html=True)
+
 # 3.2 不同用户群体转化对比（漏斗指定绿色系梯度）
 st.subheader("3.2 新老用户转化差异")
 st.write("""
@@ -479,22 +502,27 @@ with col_ft1:
                          color_discrete_sequence=[COLORS["deepest_green"]], template="plotly_white", height=350)
     st.plotly_chart(fig_fun1, use_container_width=True)
     st.markdown('<p class="data-source">数据来源：平台整体运营数据</p>', unsafe_allow_html=True)
+
 with col_ft2:
     fig_fun2 = px.funnel(funnel_new, x="用户数万", y="转化阶段", title="新用户转化漏斗",
                          color_discrete_sequence=[COLORS["mid_green"]], template="plotly_white", height=350)
     st.plotly_chart(fig_fun2, use_container_width=True)
     st.markdown('<p class="data-source">数据来源：新用户运营模块</p>', unsafe_allow_html=True)
+
 with col_ft3:
     fig_fun3 = px.funnel(funnel_old, x="用户数万", y="转化阶段", title="老用户转化漏斗",
                          color_discrete_sequence=[COLORS["lightest_green"]], template="plotly_white", height=350)
     st.plotly_chart(fig_fun3, use_container_width=True)
     st.markdown('<p class="data-source">数据来源：老用户分层运营数据</p>', unsafe_allow_html=True)
+
 st.divider()
+
 # ===================== 4. 用户留存分析（漏斗指定绿色系） =====================
 st.subheader("4. 用户留存分析")
 st.write("""
 用户留存是衡量平台用户粘性的核心指标，本章节聚焦近7天留存表现及留存提升痛点，为运营优化提供数据支撑。
 """)
+
 # 数据准备
 dates = pd.date_range(start="2026-03-09", end="2026-03-15")
 retention_data = pd.DataFrame({
@@ -504,6 +532,7 @@ retention_data = pd.DataFrame({
     "7日留存率": [45.0, 42.0, 49.0, 44.0, 43.0, 44.5, 46.0]
 })
 retention_data["日期标签"] = retention_data["日期"].dt.strftime("Mar %d\n2026")
+
 # 4.1 近7天留存表现（漏斗指定绿色系，缩短高度）
 st.markdown("### 4.1 近7天留存表现")
 st.markdown("""
@@ -511,67 +540,115 @@ st.markdown("""
 """)
 st.markdown('<div class="section-4-1">', unsafe_allow_html=True)
 col1, col2 = st.columns([1, 1], gap="medium")
-# 左侧：近7天留存柱状+折线图（漏斗最深绿+浅绿）
+
+# 左侧：替换matplotlib为Plotly双轴图
 with col1:
-    fig, ax1 = plt.subplots(figsize=(8, 6), constrained_layout=True)
-    ax2 = ax1.twinx()
-    x = np.arange(len(retention_data))
-    ax1.bar(x, retention_data["日活UV万"], color=COLORS["deepest_green"], alpha=0.9, label="日活UV万")
-    ax2.plot(x, retention_data["次日留存率"], color=COLORS["deepest_green"], marker="o", linewidth=2, markersize=6,
-             label="次日留存率")
-    ax2.plot(x, retention_data["7日留存率"], color=COLORS["light_green"], marker="o", linewidth=2, markersize=6,
-             label="7日留存率")
-    ax1.set_xticks(x)
-    ax1.set_xticklabels(retention_data["日期标签"], fontsize=10, color=COLORS["text_secondary"])
-    ax1.set_xlabel("日期", fontsize=9, color=COLORS["text_primary"])
-    ax1.set_ylabel("日活UV万", fontsize=9, color=COLORS["text_primary"])
-    ax1.set_ylim(0, 700)
-    ax2.set_ylabel("留存率", fontsize=9, color=COLORS["text_primary"])
-    ax2.set_ylim(40, 75)
-    lines1, labels1 = ax1.get_legend_handles_labels()
-    lines2, labels2 = ax2.get_legend_handles_labels()
-    ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper left", fontsize=8)
-    ax1.set_facecolor(COLORS["bg_ultralight"])
-    ax2.set_facecolor(COLORS["bg_ultralight"])
-    fig.patch.set_facecolor(COLORS["bg_ultralight"])
-    ax1.spines[["top", "right"]].set_color(COLORS["text_secondary"])
-    ax2.spines[["top", "left"]].set_color(COLORS["text_secondary"])
-    st.pyplot(fig)
-    st.markdown('<p class="data-source">数据来源：叮咚买菜用户留存监控系统</p>', unsafe_allow_html=True)
-# 右侧：气泡图（漏斗指定绿色渐变）
-with col2:
-    fig, ax = plt.subplots(figsize=(8, 6), constrained_layout=True)
-    bubble_sizes = retention_data["日活UV万"] * 5
-    # 气泡渐变：漏斗指定绿（lightest→deepest）
-    cmap_bubble = LinearSegmentedColormap.from_list("retention", [COLORS["lightest_green"], COLORS["deepest_green"]], N=10)
-    scatter = ax.scatter(
-        retention_data["次日留存率"],
-        retention_data["7日留存率"],
-        s=bubble_sizes,
-        c=retention_data["7日留存率"],
-        cmap=cmap_bubble,
-        alpha=0.8,
-        edgecolors="white", linewidth=1
+    fig_retention = go.Figure()
+    
+    # 柱状图：日活UV
+    fig_retention.add_trace(go.Bar(
+        x=retention_data["日期标签"],
+        y=retention_data["日活UV万"],
+        name="日活UV万",
+        marker_color=COLORS["deepest_green"],
+        opacity=0.9
+    ))
+    
+    # 折线图：次日留存率
+    fig_retention.add_trace(go.Scatter(
+        x=retention_data["日期标签"],
+        y=retention_data["次日留存率"],
+        name="次日留存率",
+        yaxis="y2",
+        marker=dict(color=COLORS["deepest_green"], size=6),
+        line=dict(width=2)
+    ))
+    
+    # 折线图：7日留存率
+    fig_retention.add_trace(go.Scatter(
+        x=retention_data["日期标签"],
+        y=retention_data["7日留存率"],
+        name="7日留存率",
+        yaxis="y2",
+        marker=dict(color=COLORS["light_green"], size=6),
+        line=dict(width=2)
+    ))
+    
+    # 布局配置
+    fig_retention.update_layout(
+        title="近7天日活UV与留存率",
+        xaxis_title="日期",
+        yaxis=dict(
+            title="日活UV万",
+            range=[0, 700],
+            titlefont=dict(color=COLORS["text_primary"]),
+            tickfont=dict(color=COLORS["text_secondary"])
+        ),
+        yaxis2=dict(
+            title="留存率(%)",
+            overlaying="y",
+            side="right",
+            range=[40, 75],
+            titlefont=dict(color=COLORS["text_primary"]),
+            tickfont=dict(color=COLORS["text_secondary"])
+        ),
+        legend=dict(x=0.01, y=0.99),
+        height=350,
+        paper_bgcolor=COLORS["bg_ultralight"],
+        plot_bgcolor=COLORS["bg_ultralight"]
     )
-    for idx, row in retention_data.iterrows():
-        ax.text(
-            row["次日留存率"] + 0.15, row["7日留存率"] + 0.15,
-            f"Mar {row['日期'].day}",
-            fontsize=12, fontweight="bold", color=COLORS["text_primary"]
-        )
-    ax.set_xlabel("次日留存率", fontsize=9, color=COLORS["text_primary"])
-    ax.set_ylabel("7日留存率", fontsize=9, color=COLORS["text_primary"])
-    ax.set_xlim(67, 74)
-    ax.set_ylim(40, 50)
-    ax.set_facecolor(COLORS["bg_ultralight"])
-    fig.patch.set_facecolor(COLORS["bg_ultralight"])
-    ax.spines[["top", "right"]].set_color(COLORS["text_secondary"])
-    cbar = plt.colorbar(scatter, ax=ax, shrink=0.8)
-    cbar.set_label("7日留存率", fontsize=8, color=COLORS["text_primary"])
-    cbar.ax.tick_params(labelsize=8, labelcolor=COLORS["text_secondary"])
-    st.pyplot(fig)
+    
+    st.plotly_chart(fig_retention, use_container_width=True)
+    st.markdown('<p class="data-source">数据来源：叮咚买菜用户留存监控系统</p>', unsafe_allow_html=True)
+
+# 右侧：替换matplotlib气泡图为Plotly气泡图
+with col2:
+    fig_bubble = px.scatter(
+        retention_data,
+        x="次日留存率",
+        y="7日留存率",
+        size="日活UV万",
+        color="7日留存率",
+        color_continuous_scale=[COLORS["lightest_green"], COLORS["deepest_green"]],
+        hover_name="日期标签",
+        text=retention_data["日期"].dt.strftime("Mar %d"),
+        size_max=100,
+        template="plotly_white",
+        height=350
+    )
+    
+    fig_bubble.update_layout(
+        title="留存率气泡图",
+        xaxis=dict(
+            title="次日留存率(%)",
+            range=[67, 74],
+            titlefont=dict(color=COLORS["text_primary"])
+        ),
+        yaxis=dict(
+            title="7日留存率(%)",
+            range=[40, 50],
+            titlefont=dict(color=COLORS["text_primary"])
+        ),
+        coloraxis_colorbar=dict(
+            title="7日留存率(%)",
+            titlefont=dict(size=8, color=COLORS["text_primary"]),
+            tickfont=dict(size=8, color=COLORS["text_secondary"])
+        ),
+        paper_bgcolor=COLORS["bg_ultralight"],
+        plot_bgcolor=COLORS["bg_ultralight"]
+    )
+    
+    # 调整文字位置
+    fig_bubble.update_traces(
+        textposition="top center",
+        textfont=dict(size=12, weight="bold", color=COLORS["text_primary"])
+    )
+    
+    st.plotly_chart(fig_bubble, use_container_width=True)
     st.markdown('<p class="data-source">气泡大小=日活UV , 颜色深浅=7日留存率</p>', unsafe_allow_html=True)
+
 st.markdown('</div>', unsafe_allow_html=True)
+
 # 留存提升核心痛点
 st.subheader("4.2 留存提升痛点")
 st.markdown("""
@@ -593,22 +670,26 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.divider()
+
 # ===================== 5. 商品销售分析（漏斗指定绿色系） =====================
 st.markdown("### 5. 商品销售分析")
 st.write("""
 商品销售分析聚焦全国区域分布、核心品类表现及热销商品特征，为商品选品、区域运营提供数据支撑。
 """) 
+
 # 5.1 全国区域销售分布（漏斗指定绿色渐变）
 st.markdown("### 5.1 全国区域销售分布")
 st.write("""
 从全国销售布局来看，平台营收集中在核心城市群，下沉市场仍有较大拓展空间。
 数据说明：以下为2025年底叮咚买菜全国前10大省份GMV排名及月度变化。
 """)
+
 # 构造省份×月份GMV模拟数据
 months = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]
 provinces = province_data["省份"].tolist()
 gmv_matrix = province_data["GMV亿元"].values.reshape(-1, 1) * (0.8 + 0.4 * np.sin(np.linspace(0, 2*np.pi, 12)))
 df_gmv = pd.DataFrame(gmv_matrix, index=provinces, columns=months)
+
 # 省份筛选器（仅控制热力图）
 selected_provinces = st.multiselect(
     label="选择要展示的省份",
@@ -617,77 +698,109 @@ selected_provinces = st.multiselect(
     label_visibility="hidden"
 )
 df_heatmap = df_gmv.loc[selected_provinces]
+
 # 双栏布局（左大右小，高度一致）
 col_map, col_mountain = st.columns([1.5, 1], gap="medium")
-# 左栏：省份×月份GMV热力图（漏斗指定绿色渐变）
+
+# 左栏：替换matplotlib热力图为Plotly热力图
 with col_map:
     st.markdown("#### 各省份月度GMV热力图")
-    fig, ax = plt.subplots(figsize=(12, 8), constrained_layout=True)
-    ax.set_facecolor(COLORS["bg_ultralight"])
-    fig.patch.set_facecolor(COLORS["bg_ultralight"])
-    # 热力图渐变：漏斗指定绿（lightest→deepest）
-    cmap = LinearSegmentedColormap.from_list("custom_green", [COLORS["lightest_green"], COLORS["deepest_green"]])
-    im = ax.imshow(df_heatmap.values, cmap=cmap, aspect="auto", vmin=0, vmax=province_data["GMV亿元"].max()*1.2)
-    # 标注单元格数值
-    for i in range(len(df_heatmap.index)):
-        for j in range(len(df_heatmap.columns)):
-            ax.text(j, i, f"{df_heatmap.iloc[i, j]:.1f}",
-                    ha="center", va="center", color="white" if df_heatmap.iloc[i,j] > 50 else COLORS["text_primary"],
-                    fontsize=8)
-    # 坐标轴配置
-    ax.set_xticks(np.arange(len(months)))
-    ax.set_xticklabels(months, fontsize=9, color=COLORS["text_secondary"])
-    ax.set_yticks(np.arange(len(selected_provinces)))
-    ax.set_yticklabels(selected_provinces, fontsize=9, color=COLORS["text_primary"])
-    ax.set_xlabel("月份", fontsize=10, color=COLORS["text_primary"])
-    ax.set_ylabel("省份", fontsize=10, color=COLORS["text_primary"])
-    # 颜色条
-    cbar = fig.colorbar(im, ax=ax, shrink=0.8, pad=0.02)
-    cbar.set_label("GMV亿元", fontsize=10, color=COLORS["text_primary"])
-    cbar.ax.tick_params(labelsize=8, color=COLORS["text_secondary"])
-    st.pyplot(fig)
+    
+    # 重塑数据为Plotly热力图格式
+    df_heatmap_reset = df_heatmap.reset_index().melt(id_vars="index", var_name="月份", value_name="GMV亿元")
+    df_heatmap_reset.columns = ["省份", "月份", "GMV亿元"]
+    
+    fig_heatmap = px.imshow(
+        df_heatmap.values,
+        x=months,
+        y=selected_provinces,
+        labels=dict(x="月份", y="省份", color="GMV亿元"),
+        color_continuous_scale=[COLORS["lightest_green"], COLORS["deepest_green"]],
+        text_auto=".1f",
+        template="plotly_white",
+        height=600
+    )
+    
+    fig_heatmap.update_layout(
+        xaxis=dict(tickfont=dict(size=9, color=COLORS["text_secondary"])),
+        yaxis=dict(tickfont=dict(size=9, color=COLORS["text_primary"])),
+        coloraxis_colorbar=dict(
+            title="GMV亿元",
+            titlefont=dict(size=10, color=COLORS["text_primary"]),
+            tickfont=dict(size=8, color=COLORS["text_secondary"])
+        ),
+        paper_bgcolor=COLORS["bg_ultralight"],
+        plot_bgcolor=COLORS["bg_ultralight"]
+    )
+    
+    st.plotly_chart(fig_heatmap, use_container_width=True)
     st.markdown('<p class="data-source">数据来源：2025年底叮咚买菜GMV排名 | 月度波动为模拟值</p>', unsafe_allow_html=True)
-# 右栏：各省份GMV分布山峦图（漏斗指定绿色系）
+
+# 右栏：替换matplotlib山峦图为Plotly面积图
 with col_mountain:
     st.markdown("#### 各省份GMV分布山峦图")
-    fig_mountain, ax = plt.subplots(figsize=(8, 8), constrained_layout=True)
-    ax.set_facecolor(COLORS["bg_ultralight"])
-    fig_mountain.patch.set_facecolor(COLORS["bg_ultralight"])
-    norm = plt.Normalize(vmin=0, vmax=len(province_data))
-    # 山峦图渐变：漏斗指定绿（lightest→deepest）
-    cmap = LinearSegmentedColormap.from_list("custom_green", [COLORS["lightest_green"], COLORS["deepest_green"]])
+    
+    # 准备山峦图数据
+    province_gmv_sorted = province_data.sort_values("GMV亿元", ascending=True)
+    fig_mountain = go.Figure()
+    
     spacing = 25
     scale = 0.5
-    months = np.arange(12)
-    month_labels = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]
-    province_gmv_sorted = province_data.sort_values("GMV亿元", ascending=True)
-    for i in range(len(province_gmv_sorted)):
-        row = province_gmv_sorted.iloc[i]
+    months_num = np.arange(12)
+    
+    for i, (idx, row) in enumerate(province_gmv_sorted.iterrows()):
         base_gmv = row["GMV亿元"]
         province_name = row["省份"]
-        monthly_fluct = base_gmv * scale * np.exp(-((months - 5.5) ** 2) / (2 * 3 ** 2))
+        monthly_fluct = base_gmv * scale * np.exp(-((months_num - 5.5) ** 2) / (2 * 3 ** 2))
         monthly_fluct += np.random.normal(0, 1.2, size=12)
-        y_base = i * spacing
-        y_vals = monthly_fluct + y_base
-        color = cmap(norm(i))
-        ax.fill_between(months, y_vals, y_base, color=color, edgecolor="white", linewidth=1.2, alpha=0.9)
-        ax.plot(months, y_vals, color="white", linewidth=0.8, alpha=0.8)
-        ax.text(-0.8, y_base + monthly_fluct.max() / 2, f"{province_name}\n{base_gmv}亿", fontsize=9, fontweight="bold", va="center", color=COLORS["text_primary"])
-    ax.set_xlim(-1, 11)
-    ax.set_xticks(months)
-    ax.set_xticklabels(month_labels, rotation=45, ha="right", fontsize=8, color=COLORS["text_secondary"])
-    ax.set_yticks([])
-    ax.spines[["top", "right", "left", "bottom"]].set_visible(False)
-    st.pyplot(fig_mountain)
+        
+        # 计算Y轴位置（堆叠）
+        y_vals = monthly_fluct + i * spacing
+        
+        # 添加面积图
+        fig_mountain.add_trace(go.Scatter(
+            x=months,
+            y=y_vals,
+            fill='tozeroy',
+            name=province_name,
+            fillcolor=px.colors.sample_colorscale([COLORS["lightest_green"], COLORS["deepest_green"]], i/len(province_gmv_sorted))[0],
+            line=dict(color="white", width=1.2),
+            hoverinfo="x+y+name",
+            hoverlabel=dict(font=dict(size=8))
+        ))
+        
+        # 添加省份标签
+        fig_mountain.add_annotation(
+            x=-0.5,
+            y=y_vals.max()/2 + i*spacing,
+            text=f"{province_name}<br>{base_gmv}亿",
+            showarrow=False,
+            font=dict(size=9, weight="bold", color=COLORS["text_primary"])
+        )
+    
+    # 布局配置
+    fig_mountain.update_layout(
+        xaxis=dict(
+            tickangle=45,
+            tickfont=dict(size=8, color=COLORS["text_secondary"]),
+            range=[-1, 11]
+        ),
+        yaxis=dict(visible=False),
+        showlegend=False,
+        height=600,
+        paper_bgcolor=COLORS["bg_ultralight"],
+        plot_bgcolor=COLORS["bg_ultralight"],
+        margin=dict(l=80, r=10, t=10, b=40)
+    )
+    
+    st.plotly_chart(fig_mountain, use_container_width=True)
     st.markdown('<p class="data-source">数据说明：月度波动为模拟值，反映GMV季节变化</p>', unsafe_allow_html=True)
-
 
 st.markdown("""
 <div style="line-height: 1.8;">
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;从叮咚买菜全国区域<strong>销售布局</strong>来看，平台GMV高度集中于核心城市群，头部省份贡献了主要营收：<strong>上海</strong>以全年累计超85亿元GMV稳居首位，<strong>北京、江苏、浙江</strong>紧随其后，单省年度GMV均突破60亿元，四省合计贡献了平台整体GMV的近60%，是当前营收基本盘；从<strong>月度表现</strong>看，头部省份GMV呈现明显季节性波动，以上海为例，3-5月GMV维持在90-102亿元高位，7月后逐步回落至40-50亿元区间，反映出生鲜消费的季节特征，而河南、安徽等下沉市场省份年度GMV仅20-25亿元，单月峰值不足30亿元，市场渗透度仍有较大提升空间；整体来看，叮咚买菜当前GMV分布呈现“<strong>头部集中、下沉不足</strong>”的特征，一线及新一线城市凭借消费能力与用户习惯成为稳定营收来源，而低线城市仍处于培育期，未来可通过爆款生鲜品类渗透与本地化运营，挖掘下沉市场商业潜力，进一步优化全国营收结构。
 </div>
 """, unsafe_allow_html=True)
-
 
 # 5.2 热销商品特征分析 + 雷达图（漏斗指定绿色系）
 st.markdown("### 5.2 热销商品特征分析")
@@ -709,6 +822,7 @@ with col_pro1:
     fig_top10.update_layout(xaxis_tickangle=-45)
     st.plotly_chart(fig_top10, use_container_width=True)
     st.markdown('<p class="data-source">数据来源：叮咚买菜商品销售数据库</p>', unsafe_allow_html=True)
+
 with col_pro2:
     # 雷达图：漏斗指定绿色系梯度
     st.markdown(" ")
@@ -746,6 +860,7 @@ with col_pro2:
     )
     st.plotly_chart(fig_radar, use_container_width=True)
     st.markdown('<p class="data-source">数据来源：叮咚买菜商品运营数据库</p>', unsafe_allow_html=True)
+
 st.markdown("""
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;叮咚买菜热销商品TOP10均为生鲜刚需高频品类，土鸡蛋以25万件月销居首，纯牛奶、西红柿紧随其后，月销分别达22万件、18万件，前十商品月销均在9万件以上，客单价集中在7-25元区间，复购率普遍超68%，毛利率介于12%-23%。这类商品能成为爆款，核心因贴合城市家庭日常采购需求，且具备高性价比、高使用频次的特征，其中土鸡蛋、纯牛奶复购率超80%，正是依托生鲜食材的刚需属性与平台品控保障。
 <br>
@@ -753,9 +868,8 @@ st.markdown("""
 <br>
 """, unsafe_allow_html=True)
 
-
-
 st.divider()
+
 # ===================== 6. 核心结论与业务建议（漏斗指定绿色系信息框） =====================
 st.subheader("6. 结论与建议")
 st.write("""
@@ -764,8 +878,10 @@ st.write("""
 2. **用户基础稳固**：日活规模、留存水平均高于行业均值，但新用户转化和复购仍有优化空间；
 3. **商品结构合理**：生鲜核心品类占比超60%，预制菜等新品类增长迅速，但下沉市场覆盖不足；
 4. **效率优势显著**：前置仓模式配送时效行业领先，供应链周转效率优于传统商超30%以上。
+
 ### 6.2 落地性业务建议
 """)
+
 # 业务建议卡片（漏斗绿色系4宫格，全报告统一）
 col_a1, col_a2, col_a3, col_a4 = st.columns(4)
 with col_a1:
@@ -779,6 +895,7 @@ with col_a1:
         </ul>
     </div>
     """, unsafe_allow_html=True)
+
 with col_a2:
     st.markdown("""
     <div class="custom-info-2">
@@ -790,6 +907,7 @@ with col_a2:
         </ul>
     </div>
     """, unsafe_allow_html=True)
+
 with col_a3:
     st.markdown("""
     <div class="custom-info-3">
@@ -801,6 +919,7 @@ with col_a3:
         </ul>
     </div>
     """, unsafe_allow_html=True)
+
 with col_a4:
     st.markdown("""
     <div class="custom-info-4">
