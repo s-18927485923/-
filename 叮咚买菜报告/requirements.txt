@@ -2,3 +2,9 @@ streamlit
 pandas
 plotly
 numpy
+# 基础依赖
+streamlit>=1.28.0
+matplotlib>=3.7.0
+# 如果代码里还用到了pandas/numpy等，也需要加在这里，示例：
+# pandas>=2.0.0
+# numpy>=1.24.0
