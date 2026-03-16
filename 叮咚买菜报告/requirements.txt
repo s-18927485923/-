@@ -8,3 +8,5 @@ matplotlib>=3.7.0
 # 如果代码里还用到了pandas/numpy等，也需要加在这里，示例：
 # pandas>=2.0.0
 # numpy>=1.24.0
+# 可选：安装字体管理库
+fonttools>=4.40.0
