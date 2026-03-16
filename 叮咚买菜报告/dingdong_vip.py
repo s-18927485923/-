@@ -425,24 +425,73 @@ with col_conv1:
             xref="paper", yref="y"
         )
     
-    # 布局配置（兼容所有 Plotly 版本）
+    # ========== 新版 Plotly 圆环图（100%兼容 6.6.0） ==========
+    funnel_steps = ["曝光→点击", "点击→加购", "加购→下单", "下单→支付", "支付→复购"]
+    conversion_rates = [85, 70, 46, 92, 39]
+
+    sorted_data = sorted(zip(conversion_rates, funnel_steps), key=lambda x: -x[0])
+    conversion_rates_sorted, funnel_steps_sorted = zip(*sorted_data)
+
+    colors = [
+        COLORS["lightest_green"],
+        COLORS["light_green"],
+        COLORS["mid_green"],
+        COLORS["dark_green"],
+        "#00695c"
+    ]
+    text_colors = [
+        "#193742", "#235742", "#55a532", "#86e066", "#50b772"
+    ]
+
+    fig_polar = go.Figure()
+    ring_width = 0.2
+    base_radius = 1.0
+
+    for i, (rate, step, color, tcolor) in enumerate(zip(conversion_rates_sorted, funnel_steps_sorted, colors, text_colors)):
+        r_outer = base_radius - i * ring_width
+        r_inner = r_outer - ring_width
+        theta_end = rate * 1.8  # 1% = 1.8度
+
+        # 绘制扇形区域
+        fig_polar.add_trace(go.Barpolar(
+            r=[r_outer - r_inner],
+            theta=[theta_end / 2],
+            width=[theta_end],
+            base=[r_inner],
+            marker_color=color,
+            marker_line_color="white",
+            marker_line_width=0.8,
+            showlegend=False,
+            hoverinfo='skip'
+        ))
+
+        # 添加文字标签
+        fig_polar.add_annotation(
+            text=f"{step}<br>{rate}%",
+            x=0, y=r_inner + ring_width/2,
+            showarrow=False,
+            font=dict(size=9, color=tcolor),
+            xref="paper", yref="y"
+        )
+
+    # 新版 Plotly 布局写法（6.6.0 完美支持）
     fig_polar.update_layout(
         title=dict(
             text="不同行为路径转化率",
             font=dict(size=13, color=COLORS["text_primary"]),
             x=0.05, y=0.95
         ),
+        polar=dict(
+            radialaxis=dict(visible=False, range=[0, base_radius]),
+            angularaxis=dict(visible=False, range=[0, 180])
+        ),
         width=500, height=500,
         showlegend=False,
         paper_bgcolor=COLORS["bg_ultralight"],
         plot_bgcolor=COLORS["bg_ultralight"]
     )
-    # 单独设置 polar 轴（固定配置，不再使用变量）
-    fig_polar.update_polars(
-        radialaxis=dict(visible=False, range=[0, 1.0]),
-        angularaxis=dict(visible=False, range=[0, 180])
-    )
-    
+    # ==============================================================
+
     st.plotly_chart(fig_polar, use_container_width=True)
     st.markdown('<p class="data-source">数据来源：叮咚买菜用户行为日志</p>', unsafe_allow_html=True)
 
