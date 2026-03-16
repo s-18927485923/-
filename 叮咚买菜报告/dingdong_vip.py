@@ -425,12 +425,8 @@ with col_conv1:
             xref="paper", yref="y"
         )
     
-    # 布局配置
+    # 布局配置（兼容所有 Plotly 版本）
     fig_polar.update_layout(
-        polar=dict(
-            radialaxis=dict(visible=False, range=[0, base_radius]),
-            angularaxis=dict(visible=False, range=[0, 180])
-        ),
         title=dict(
             text="不同行为路径转化率",
             font=dict(size=13, color=COLORS["text_primary"]),
@@ -440,6 +436,11 @@ with col_conv1:
         showlegend=False,
         paper_bgcolor=COLORS["bg_ultralight"],
         plot_bgcolor=COLORS["bg_ultralight"]
+    )
+    # 单独设置 polar 轴（旧版本兼容写法）
+    fig_polar.update_polars(
+        radialaxis=dict(visible=False, range=[0, base_radius]),
+        angularaxis=dict(visible=False, range=[0, 180])
     )
     
     st.plotly_chart(fig_polar, use_container_width=True)
