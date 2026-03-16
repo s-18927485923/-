@@ -22,8 +22,6 @@ COLORS = {
     "text_primary": "#2C3E50",
     "text_secondary": "#6C757D"
 }
-
-
 # ========== 解决中文显示：手动加载开源中文字体 ==========
 import matplotlib.pyplot as plt
 from matplotlib import font_manager
@@ -42,7 +40,6 @@ font_prop = font_manager.FontProperties(fname=font_path)
 plt.rcParams['font.family'] = font_prop.get_name()
 plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
 # =====================================================
-
 
 # 页面配置（超浅绿背景 + 1300px宽度）
 st.set_page_config(page_title="叮咚买菜经营数据分析报告", layout="wide")
