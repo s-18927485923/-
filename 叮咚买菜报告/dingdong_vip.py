@@ -22,23 +22,37 @@ COLORS = {
     "text_primary": "#2C3E50",
     "text_secondary": "#6C757D"
 }
-# ========== 解决中文显示：手动加载开源中文字体 ==========
+
+
+# ========== 稳定版：解决中文显示（不依赖网络下载） ==========
 import matplotlib.pyplot as plt
-from matplotlib import font_manager
-import os
-import urllib.request
+import matplotlib.font_manager as fm
 
-# 下载开源中文字体（WenQuanYi Micro Hei）到临时目录
-font_url = "https://github.com/lxylxy1404/fonts/raw/master/wqy-microhei.ttc"
-font_path = "/tmp/wqy-microhei.ttc"
-
-if not os.path.exists(font_path):
-    urllib.request.urlretrieve(font_url, font_path)
-
-# 手动注册字体到 matplotlib
-font_prop = font_manager.FontProperties(fname=font_path)
-plt.rcParams['font.family'] = font_prop.get_name()
+# 方案1：优先使用系统自带的开源中文字体（WenQuanYi Micro Hei 是 Streamlit Cloud 预装的）
+plt.rcParams['font.sans-serif'] = [
+    'WenQuanYi Micro Hei',
+    'DejaVu Sans',
+    'SimHei',
+    'Arial Unicode MS'
+]
 plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
+
+# 方案2：如果方案1无效，手动注册字体（备选）
+def try_load_chinese_font():
+    font_paths = [
+        "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    ]
+    for path in font_paths:
+        try:
+            font_prop = fm.FontProperties(fname=path)
+            plt.rcParams['font.family'] = font_prop.get_name()
+            return font_prop
+        except Exception:
+            continue
+    return None
+
+font_prop = try_load_chinese_font()
 # =====================================================
 
 # 页面配置（超浅绿背景 + 1300px宽度）
