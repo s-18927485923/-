@@ -437,9 +437,9 @@ with col_conv1:
         paper_bgcolor=COLORS["bg_ultralight"],
         plot_bgcolor=COLORS["bg_ultralight"]
     )
-    # 单独设置 polar 轴（旧版本兼容写法）
+    # 单独设置 polar 轴（固定配置，不再使用变量）
     fig_polar.update_polars(
-        radialaxis=dict(visible=False, range=[0, base_radius]),
+        radialaxis=dict(visible=False, range=[0, 1.0]),
         angularaxis=dict(visible=False, range=[0, 180])
     )
     
