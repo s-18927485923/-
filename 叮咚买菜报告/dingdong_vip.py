@@ -23,8 +23,8 @@ COLORS = {
     "text_secondary": "#6C757D"
 }
 # 全局字体配置（解决matplotlib中文显示问题）
-plt.rcParams['font.sans-serif'] = ['SimHei']
-plt.rcParams['axes.unicode_minus'] = False
+plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'WenQuanYi Micro Hei', 'SimHei', 'Arial Unicode MS']
+plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示方块问题
 # 页面配置（超浅绿背景 + 1300px宽度）
 st.set_page_config(page_title="叮咚买菜经营数据分析报告", layout="wide")
 st.markdown(f"""
