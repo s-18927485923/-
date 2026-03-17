@@ -364,68 +364,7 @@ st.write("""
 
 col_conv1, col_conv2 = st.columns(2)
 with col_conv1:
-    # ========== 替换matplotlib圆环图为Plotly极坐标图（中文100%生效） ==========
-    funnel_steps = ["曝光→点击", "点击→加购", "加购→下单", "下单→支付", "支付→复购"]
-    conversion_rates = [85, 70, 46, 92, 39]
-    
-    # 排序数据
-    sorted_data = sorted(zip(conversion_rates, funnel_steps), key=lambda x: -x[0])
-    conversion_rates_sorted, funnel_steps_sorted = zip(*sorted_data)
-    
-    # 构建极坐标图数据
-    fig_polar = go.Figure()
-    ring_width = 0.2
-    base_radius = 1.0
-    
-    # 颜色配置（保留你的绿色系）
-    colors = [
-        COLORS["lightest_green"],
-        COLORS["light_green"],
-        COLORS["mid_green"],
-        COLORS["dark_green"],
-        "#00695c"
-    ]
-    
-    text_colors = [
-        "#193742",
-        "#235742",
-        "#55a532",
-        "#86e066",
-        "#50b772"
-    ]
-    
-    for i, (rate, step, color, tcolor) in enumerate(zip(conversion_rates_sorted, funnel_steps_sorted, colors, text_colors)):
-        # 绘制圆环段
-        r_outer = base_radius - i * ring_width
-        r_inner = r_outer - ring_width
-        
-        # 计算角度范围（0-180度对应0-100%）
-        theta = np.linspace(0, rate * 1.8, 100)  # 1.8度 = 1%
-        theta = np.append(theta, theta[-1])
-        r_outer_vals = np.full_like(theta, r_outer)
-        r_inner_vals = np.full_like(theta, r_inner)
-        
-        # 绘制填充区域
-        fig_polar.add_trace(go.Scatterpolar(
-            r=np.concatenate([r_inner_vals, r_outer_vals[::-1]]),
-            theta=np.concatenate([theta, theta[::-1]]),
-            fill='toself',
-            fillcolor=color,
-            line=dict(color="white", width=0.8),
-            showlegend=False,
-            hoverinfo='skip'
-        ))
-        
-        # 添加文字标签
-        fig_polar.add_annotation(
-            text=f"{step}<br>{rate}%",
-            x=0, y=r_inner + ring_width/2,
-            showarrow=False,
-            font=dict(size=9, color=tcolor, weight="normal"),
-            xref="paper", yref="y"
-        )
-    
-    # ========== 新版 Plotly 圆环图（100%兼容 6.6.0） ==========
+    # ========== 极简版圆环图（一次定义，无重复） ==========
     funnel_steps = ["曝光→点击", "点击→加购", "加购→下单", "下单→支付", "支付→复购"]
     conversion_rates = [85, 70, 46, 92, 39]
 
@@ -452,7 +391,7 @@ with col_conv1:
         r_inner = r_outer - ring_width
         theta_end = rate * 1.8  # 1% = 1.8度
 
-        # 绘制扇形区域
+        # 用 Barpolar 画扇形（所有版本都支持）
         fig_polar.add_trace(go.Barpolar(
             r=[r_outer - r_inner],
             theta=[theta_end / 2],
@@ -474,7 +413,7 @@ with col_conv1:
             xref="paper", yref="y"
         )
 
-    # 新版 Plotly 布局写法（6.6.0 完美支持）
+    # 布局配置（一次写完，无多余代码）
     fig_polar.update_layout(
         title=dict(
             text="不同行为路径转化率",
@@ -490,7 +429,6 @@ with col_conv1:
         paper_bgcolor=COLORS["bg_ultralight"],
         plot_bgcolor=COLORS["bg_ultralight"]
     )
-    # ==============================================================
 
     st.plotly_chart(fig_polar, use_container_width=True)
     st.markdown('<p class="data-source">数据来源：叮咚买菜用户行为日志</p>', unsafe_allow_html=True)
